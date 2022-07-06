@@ -3,20 +3,22 @@ import shutil
 import subprocess
 import sys
 import bagit
+import requests
+
+def get_path(text):
+    while True:
+        path = input(text)
+        if os.path.exists(path):
+            return path
+        else:
+            print("Path does not exist.")
+
 
 # Path to where bag dir(s) will be made
-path = input("Enter directory to save bags: ")
-try:
-    os.path.exists(path)
-except:
-    print("Path does not exist.")
+path = get_path("Enter directory to save bags: ")
 
-# Where is fits saved? 
-fits_dir = input("Enter directory where FITS is saved: ")
-try:
-    os.path.exists(os.path.join(fits_dir, "fits.bat"))
-except:
-    print("Couldn't find FITS.")
+# Where is fits saved?
+fits_dir = get_path("Enter directory where FITS is saved: ")
 
 def get_bag_size(bagpath):
     total = 0
@@ -47,18 +49,28 @@ def get_bag_size(bagpath):
         pb = total/(1024**5)
         return str(round(pb,2)) + " PB"
 
-# ideally, we will have (or be able to get) a dictionary in the form of: {ark:/path/to/object}
+# make a dictionary in the form of: {ark:/path/to/object}
 arks_list = {}
 
-# If we don't have the objects loc already, need to create arks_list
-# path_to_objects = input("Enter directory of objects: ")
-# obj_names = os.listdir(path_to_objects)
-# for name in obj_names:
-#     # check if it has an ark -- somehow?
-#     # add ark to dict
-#     arks_list[ark] = os.path.join(path_to_objects, name)
+path_to_objects = get_path("Enter directory of objects: ")
+base_url = input("Enter larkm host url")
+ark_lookup = base_url + "/search"
 
-curr_dir = os.getcwd()
+# assuming that we will have access to the drive location of the objects
+obj_names = os.listdir(path_to_objects)
+curr = os.getcwd()
+os.chdir(path_to_objects)
+for name in obj_names:
+    full = os.path.abspath(name)
+    params = {"q":r"erc_where:"+full}
+    r = requests.get(ark_lookup, params=params)
+    j = r.json()
+    if j['num_results'] > 0:
+        if j['arks'][0]['target'] == name:
+            ark = j['arks'][0]['ark_string']
+            arks_list[ark] = os.path.join(path_to_objects, name)
+
+os.chdir(curr)
 
 count=1
 for ark,loc in arks_list.items():
@@ -71,7 +83,7 @@ for ark,loc in arks_list.items():
     os.mkdir(bagname)
     bagsize = get_bag_size(loc)
     info = {"Source-Organization": "Simon Fraser University",
-            "Organization-Address": "8888 University Dr, Burnaby, BC V5A 1S6", "Contact-Email": "summit@sfu.ca",
+            "Organization-Address": "8888 University Dr, Burnaby, BC V5A 1S6", "Contact-Email": "libhelp@sfu.ca",
             "External-Identifier": ark, "Internal-Sender-Identifier": loc, "Bag-Size": bagsize}
     if len(arks_list) > 1:
         info['Bag-Count'] = str(count) + " of " + str(len(arks_list))
@@ -98,11 +110,6 @@ for ark,loc in arks_list.items():
             os.chdir(curr_dir)
     bag.save(manifests=True)
 
-
-
-
-
-
-#--- To-do: descriptive metadata
-# can I get the ERC metadata via api? E.g. "resolver/ark:/naan/uuid/?"
-
+#--- To-do:
+#  - add descriptive metadata
+#  - allow config for bag-info
