@@ -7,9 +7,9 @@ import requests
 
 def get_path(text):
     while True:
-        path = input(text)
-        if os.path.exists(path):
-            return path
+        p = input(text)
+        if os.path.exists(p):
+            return p
         else:
             print("Path does not exist.")
 
@@ -53,22 +53,23 @@ def get_bag_size(bagpath):
 arks_list = {}
 
 path_to_objects = get_path("Enter directory of objects: ")
-base_url = input("Enter larkm host url")
+base_url = input("Enter larkm host url (without trailing /)")
 ark_lookup = base_url + "/search"
 
-# assuming that we will have access to the drive location of the objects
 obj_names = os.listdir(path_to_objects)
 curr = os.getcwd()
 os.chdir(path_to_objects)
+
 for name in obj_names:
     full = os.path.abspath(name)
     params = {"q":r"erc_where:"+full}
     r = requests.get(ark_lookup, params=params)
     j = r.json()
     if j['num_results'] > 0:
-        if j['arks'][0]['target'] == name:
-            ark = j['arks'][0]['ark_string']
-            arks_list[ark] = os.path.join(path_to_objects, name)
+        ark = j['arks'][0]['ark_string']
+        arks_list[ark] = full
+    else:
+        print("Couldn't find ARK: " + name)
 
 os.chdir(curr)
 
@@ -78,7 +79,7 @@ for ark,loc in arks_list.items():
         print("Check file path: ", loc)
         continue
     count += 1
-    uuid=ark.split("/")[2]
+    uuid=ark.split("/")[1]
     bagname = os.path.join(path, uuid)
     os.mkdir(bagname)
     bagsize = get_bag_size(loc)
@@ -87,7 +88,7 @@ for ark,loc in arks_list.items():
             "External-Identifier": ark, "Internal-Sender-Identifier": loc, "Bag-Size": bagsize}
     if len(arks_list) > 1:
         info['Bag-Count'] = str(count) + " of " + str(len(arks_list))
-        info['Bag-Group'] = os.path.split(path_to_objects)[1]
+        info['Bag-Group-Identifier'] = os.path.split(path_to_objects)[1]
     bag = bagit.make_bag(bagname, bag_info=info, checksums=['md5','sha256'])
     if os.path.isdir(loc):
         shutil.copytree(loc, os.path.join(bagname, "data"), dirs_exist_ok=True)
