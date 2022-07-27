@@ -3,34 +3,41 @@ import os
 import aiptools
 import logging
 import argparse
+import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--larkm_url", required=True, help="larkm host URL." )
-parser.add_argument("--repo_url", required=False, help="Base URL of Islandora repository")
-parser.add_argument("--filename", required=False, help="Location of text file or a space separated list of node ids.")
+parser.add_argument('--config', required=True, help='The location of the configuration YAML file.')
 args = parser.parse_args()
 
 logging.basicConfig(filename="make_ARK.log", level=logging.INFO)
 
-# larkm_url = input("Enter larkm host: ").rstrip("/")
-# repo_url = input("Enter Islandora repository URL: ").rstrip("/")
-# fn = input("Enter list of node IDs (txt file or space-separated list): ") # Double check format; may be space separated.
+# Load config
+try:
+    with open(args.config, 'r') as y:
+        config = yaml.safe_load(y)
+except:
+    logging.error("Could not open config file: " + args.config)
+    raise SystemExit
+
+larkm_url = config['larkm_host'].rstrip("/")
+repo_url = config['repo_url'].rstrip("/")
+node_ids = config['node_ids']
 
 nids = []
-if os.path.isfile(args.filename):
+if os.path.isfile(node_ids):
     try:
-        with open(args.filename, "r") as f:
-            for line in f:
-                nids.append(line.strip())
+        with open(node_ids, "r") as f:
+            num_string = f.read()
+            nids.append(num_string.split(" "))
     except:
-        logging.error("Could not open " + args.filename)
+        logging.error("Could not open file: " + node_ids)
+        raise SystemExit
 else:
-    for n in args.filename.split(" "):
-        nids.append(n.strip())
+    nids.append(node_ids)
 
 # Get node.json
 for node in nids:
-    nj = aips.get_node_json(args.repo_url.rstrip("/"), str(node))
+    nj = aips.get_node_json(repo_url, str(node))
     uuid = nj['uuid'][0]['value']
     try:
         who = nj['metatag']['value']['dcterms_creator_0']
@@ -38,13 +45,13 @@ for node in nids:
         who = ":at"
     what = nj['title'][0]['value']
     when = nj['created'][0]['value']
-    where = args.repo_url.rstrip("/") + "/node/" + str(node)
+    where = repo_url + "/node/" + str(node)
     data = {"identifier":uuid, "who":who, "what":what, "when":when, "where":where}
-    p = requests.post(args.larkm_url.rstrip("/"), json=data)
+    p = requests.post(larkm_url, json=data)
     j = p.json()
     if p.status_code == 409:
         logging.error(j['detail'])
-        s = requests.get(args.larkm_url.rstrip("/")+"/search/", params = {'q':'erc_what:'+what})
+        s = requests.get(larkm_url + "/search/", params = {'q':'erc_what:'+what})
         search = s.json()
         if search['num_results'] > 0:
             logging.info("ARK already exists: " + search['arks'][0]['ark_string'])

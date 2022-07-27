@@ -2,18 +2,31 @@ import json
 import requests
 import argparse
 import os
-import getpass
 import aiptools
+import yaml
+import logger
 from lxml import etree, isoschematron
 import xml.etree.ElementTree as ET
 
+logging.basicConfig(filename="mets.log", level=logging.INFO)
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--repo_url', required=True, help='The base url of the islandora repository.')
-parser.add_argument('--node_ids', required = True, help = 'Comma separated list of node IDs to create METS from.')
-parser.add_argument('--outputdir', required=False, help='Specify output directory for METS files. Otherwise will save to same folder as script.')
-parser.add_argument('--ark_naan', required=False, help="If using ARKs derived from Drupal UUID, specify institution's NAAN.")
-parser.add_argument('--ark_shoulder', required=False, help="If using ARKs derived from Drupal UUID, specify ARK shoulder.")
+parser.add_argument('--config', required=True, help='The location of the configuration YAML file.')
+parser.add_argument('--outputdir', required=False, help='Specify output directory for METS files. Otherwise the file will be saved to the same folder as script.')
 args = parser.parse_args()
+
+# Load configuration file
+try:
+    with open(args.config, 'r') as y:
+        config = yaml.safe_load(y)
+except:
+    logging.error("Could not open config file: " + args.config)
+    raise SystemExit
+
+repo_url = config['repo_url'].rstrip("/")
+nids = config['node_ids']
+naan = config['ark_naan']
+shoulder = config['ark_shoulder']
 
 # Register namespaces
 ET.register_namespace('xlink', "http://www.w3.org/1999/xlink")
@@ -21,26 +34,27 @@ ET.register_namespace('mets', "http://www.loc.gov/METS/")
 xlink="{http://www.w3.org/1999/xlink}"
 mets="{http://www.loc.gov/METS/}"
 
-repo_url = args.repo_url.rstrip("/")
-
-if args.ark_naan is not None:
-    naan = args.ark_naan
+# If NAAN left blank, use URL instead of ARKs for Flocat
+if naan == "":
     id_type = "ARK"
 else:
     id_type = "URL"
 
-if args.ark_shoulder is not None:
-    shoulder=args.ark_shoulder
-else:
-    shoulder=""
-
 # List of node ids
 node_ids = []
-for nid in args.node_ids.split(","):
-    node_ids.append(nid.strip())
+if os.path.isfile(nids):
+    try:
+        with open(nids, "r") as f:
+            num_string = f.read()
+            node_ids.append(num_string.split(" "))
+    except:
+        logging.error("Could not open file: " + nids)
+        raise SystemExit
+else:
+    node_ids.append(nids)
 
-user = input("Enter REST client username: ")
-pw = getpass.getpass()
+user = config['auth'][0]
+pw = config['auth'][1]
 
 for nid in node_ids:
     # Create main sections and root
