@@ -21,23 +21,15 @@ except:
 
 larkm_url = config['larkm_host'].rstrip("/")
 repo_url = config['repo_url'].rstrip("/")
-node_ids = config['node_ids']
-
-nids = []
-if os.path.isfile(node_ids):
-    try:
-        with open(node_ids, "r") as f:
-            num_string = f.read()
-            nids.append(num_string.split(" "))
-    except:
-        logging.error("Could not open file: " + node_ids)
-        raise SystemExit
-else:
-    nids.append(node_ids)
+node_ids = aiptools.read_config_nodes(config)
 
 # Get node.json
 for node in nids:
-    nj = aips.get_node_json(repo_url, str(node))
+    try:
+        nj = aiptools.get_node_json(repo_url, str(node))
+    except:
+        logging.error("Could not retrieve node.json for " + str(node))
+        continue
     uuid = nj['uuid'][0]['value']
     try:
         who = nj['metatag']['value']['dcterms_creator_0']
