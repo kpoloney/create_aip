@@ -1,10 +1,10 @@
 import json
+import logging
 import requests
 import argparse
 import os
 import aiptools
 import yaml
-import logger
 from lxml import etree, isoschematron
 import xml.etree.ElementTree as ET
 
@@ -24,9 +24,10 @@ except:
     raise SystemExit
 
 repo_url = config['repo_url'].rstrip("/")
-nids = config['node_ids']
 naan = config['ark_naan']
 shoulder = config['ark_shoulder']
+user = config['auth'][0]
+pw = config['auth'][1]
 
 # Register namespaces
 ET.register_namespace('xlink', "http://www.w3.org/1999/xlink")
@@ -36,50 +37,49 @@ mets="{http://www.loc.gov/METS/}"
 
 # If NAAN left blank, use URL instead of ARKs for Flocat
 if naan == "":
-    id_type = "ARK"
-else:
     id_type = "URL"
-
-# List of node ids
-node_ids = []
-if os.path.isfile(nids):
-    try:
-        with open(nids, "r") as f:
-            num_string = f.read()
-            node_ids.append(num_string.split(" "))
-    except:
-        logging.error("Could not open file: " + nids)
-        raise SystemExit
 else:
-    node_ids.append(nids)
+    id_type = "ARK"
 
-user = config['auth'][0]
-pw = config['auth'][1]
+# List of node ids (function checks if nodes are a list or text file and returns a list of nids).
+node_ids = aiptools.read_config_nodes(config)
 
 for nid in node_ids:
     # Create main sections and root
-    node = aiptools.get_node_json(nid)
+    try:
+        node = aiptools.get_node_json(repo_url, nid)
+    except:
+        logging.error("Could not retrieve node.json for " + str(nid))
+        continue
     root = ET.Element(mets + 'mets', attrib={'LABEL':node['title'][0]['value']})
     filesec = ET.SubElement(root, mets + "fileSec")
     structmap = ET.SubElement(root, mets + "structMap", attrib={"TYPE": "logical"})
     main_level = ET.SubElement(structmap, mets + "div")
     # get main metadata for each nid
-    members = aiptools.get_members(nid, user, pw)
+    try:
+        members = aiptools.get_members(repo_url, nid, user, pw)
+    except:
+        logging.error("Could not retrieve members.json for " + str(nid))
+        continue
     node_uuid = "uuid_" + node['uuid'][0]['value']
     if id_type == 'ARK':
         node_loc = "ark:" + naan + "/" + shoulder + node['uuid'][0]['value']
     else:
-        node_loc = repo_url + "/node/" + nid
+        node_loc = repo_url + "/node/" + str(nid)
     # Use external URI for field_model for fileGrp/type. Need secondary lookup for taxonomy json.
     model_url = repo_url + node['field_model'][0]['url'] + "?_format=json"
-    node_model = aiptools.get_field_model(model_url)
+    try:
+        node_model = aiptools.get_field_model(model_url)
+    except:
+        logging.error("Could not retrieve field model for: " + str(nid) + ". Enter fileGrp USE manually.")
+        node_model = "ENTER FIELD MODEL"
     # Build node element tree
     node_grp = ET.SubElement(filesec, mets + "fileGrp", attrib={"USE": node_model})
     node_file = ET.SubElement(node_grp, mets + "file", attrib={"ID": node_uuid})
     node_flocat = ET.SubElement(node_file, mets + "FLocat", attrib={xlink + "href": node_loc, "LOCTYPE": id_type})
     node_fptr = ET.SubElement(main_level, mets + "fptr", attrib={"FILEID": node_uuid})
     # Keep dictionary of file groups to avoid repeated top-level sections
-    grp = {node_model:node_grp}
+    grp = {node_model: node_grp}
     if len(members)>0: # members will be length 0 if there are no child objects
         child_level = ET.SubElement(main_level, mets+"div", attrib={"TYPE":"http://purl.org/dc/terms/hasPart"})
         # members will come out as a list of dictionaries if there are multiple children. Otherwise it is a dictionary.
@@ -93,7 +93,7 @@ for nid in node_ids:
                     child_loc = repo_url+'/node/'+ str(members[i]['nid'][0]['value'])
                 # get ext url for model
                 c_url = repo_url + members[i]['field_model'][0]['url'] + "?_format=json"
-                fgrp_type = aips.get_field_model(c_url)
+                fgrp_type = aiptools.get_field_model(c_url)
                 if fgrp_type not in grp.keys():
                     fgrp = ET.SubElement(filesec, mets+'fileGrp', attrib={"USE":fgrp_type})
                     file = ET.SubElement(fgrp, mets+"file", attrib={"ID":"uuid_"+child_uuid})
@@ -101,7 +101,7 @@ for nid in node_ids:
                     grp[fgrp_type] = fgrp
                 else:
                     parent = grp[fgrp_type]
-                    file = ET.SubElement(parent, mets+"file", attrib={"ID":child_uuid})
+                    file = ET.SubElement(parent, mets+"file", attrib={"ID":"uuid_"+child_uuid})
                     flocat = ET.SubElement(file, mets+'FLocat', attrib={xlink+"href":child_loc, "LOCTYPE":id_type})
         else:  # If there is only one child
             child_uuid = members['uuid'][0]['value']
@@ -111,7 +111,11 @@ for nid in node_ids:
             else:
                 child_loc = repo_url + '/node/' + str(members['nid'][0]['value'])
             c_url = repo_url + members['field_model'][0]['url'] + "?_format=json"
-            fgrp_type = aips.get_field_model(c_url)
+            try:
+                fgrp_type = aiptools.get_field_model(c_url)
+            except:
+                logging.error("Could not retrieve field model for:" + str(members['nid'][0]['value']) + ". Enter fileGrp USE attribute manually.")
+                fgrp_type = "ENTER FILE GROUP TYPE"
             if fgrp_type not in grp.keys():
                 fgrp = ET.SubElement(filesec, mets + 'fileGrp', attrib={"USE": fgrp_type})
                 file = ET.SubElement(fgrp, mets + "file", attrib={"ID": "uuid_" + child_uuid})
@@ -119,7 +123,7 @@ for nid in node_ids:
                 grp[fgrp_type] = fgrp
             else:
                 parent = grp[fgrp_type]
-                file = ET.SubElement(parent, mets + "file", attrib={"ID": child_uuid})
+                file = ET.SubElement(parent, mets + "file", attrib={"ID": "uuid_"+child_uuid})
                 flocat = ET.SubElement(file, mets + 'FLocat', attrib={xlink + "href": child_loc, "LOCTYPE": id_type})
     if len(node['field_member_of'])>0:
         parent_level = ET.SubElement(main_level, mets+"div", attrib={"TYPE":"http://purl.org/dc/terms/isPartOf"})
@@ -133,7 +137,7 @@ for nid in node_ids:
                 #get node.json for parent objects
                 r = requests.get(p_url[j])
                 if r.status_code == 200:
-                    parent_node = json.loads(r.content.decode('utf-8'))
+                    parent_node = r.json()
                     uuid = parent_node['uuid'][0]['value']
                     fptr = ET.SubElement(parent_level, mets+"fptr", attrib={"FILEID":"uuid_"+uuid})
                     if id_type == 'ARK':
@@ -152,6 +156,8 @@ for nid in node_ids:
                         filegroup = grp[model]
                         pfile = ET.SubElement(filegroup, mets+"file", attrib={'ID':"uuid_"+uuid})
                         pflocat = ET.SubElement(pfile, mets+"FLocat", attrib={xlink+"href":parent_loc, "LOCTYPE":id_type})
+                else:
+                    logging.error("Could not get node.json for parent node: " + str(p_url[j]))
         else:
             p_url = repo_url + node['field_member_of'] + "?_format=json"
             r = requests.get(p_url)
@@ -175,10 +181,12 @@ for nid in node_ids:
                     filegroup = grp[model]
                     pfile = ET.SubElement(filegroup, mets + "file", attrib={'ID': "uuid_" + uuid})
                     pflocat = ET.SubElement(pfile, mets + "FLocat", attrib={xlink + "href": parent_loc, "LOCTYPE": id_type})
+            else:
+                logging.error("Could not get node.json for parent node: " + str(p_url))
     tree = ET.ElementTree(root)
     ET.indent(tree, space='\t')
     if args.outputdir is not None and os.path.exists(args.outputdir):
-        filename = os.path.join(args.outputdir, nid+"_mets.xml")
+        filename = os.path.join(args.outputdir, str(nid) +"_mets.xml")
     else:
-        filename = nid + "_mets.xml"
+        filename = str(nid) + "_mets.xml"
     tree.write(filename, xml_declaration=False, encoding='utf-8')
