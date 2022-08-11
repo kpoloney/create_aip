@@ -38,13 +38,13 @@ mets_dir: '/metadata/METS'
 
 [aiptools](#aiptools) contains functions required for the other scripts. 
 
-[mint_islandora_ARK](#Mint Islandora ARK) creates an ARK identifier for Islandora objects.
+[mint_islandora_ARK](#mint-islandora-ark) creates an ARK identifier for Islandora objects.
 
-[islandora_METS](#Create METS) creates METS files for Islandora objects. 
+[islandora_METS](#create-mets) creates METS files for Islandora objects. 
 
-[make_bag_islandora](#Make Islandora bag) completes and Bags the AIP for Islandora objects.
+[make_bag_islandora](#make-islandora-bag) completes and Bags the AIP for Islandora objects.
 
-[local_objects](#Local Objects) creates bagged AIPs for objects stored locally that is not intended to be hosted online.
+[local_objects](#local-objects) creates bagged AIPs for objects stored locally that is not intended to be hosted online.
 
 ## aiptools
 
