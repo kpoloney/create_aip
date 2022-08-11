@@ -83,3 +83,14 @@ def get_new_nodes(repo_url, date, auth):
         raise Warning("No new node IDs on " + str(date))
     else:
         return new_node_ids
+
+def get_ark(larkm_url, repo_url, nid):
+    search=larkm_url.rstrip('/') + '/search/'
+    nodeloc = repo_url.rstrip('/') + '/node/' + str('nid')
+    params = {'q':'erc_where:'+nodeloc}
+    r = requests.get(search, params=params)
+    j=r.json()
+    if j['num_results'] > 0:
+        return j['arks'][0]
+    else:
+        raise Warning("No ARK found for " + nid)

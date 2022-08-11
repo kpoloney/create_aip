@@ -12,7 +12,6 @@ logging.basicConfig(filename="create_aip.log", level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', required=True, help='The location of the configuration YAML file.')
-parser.add_argument('--outputdir', required=False, help='Specify output directory for METS files. Otherwise the file will be saved to the same folder as script.')
 args = parser.parse_args()
 
 # Load configuration file
@@ -28,6 +27,7 @@ naan = config['ark_naan']
 shoulder = config['ark_shoulder']
 user = config['auth'][0]
 pw = config['auth'][1]
+outputdir = config['mets_dir']
 
 # Register namespaces
 ET.register_namespace('xlink', "http://www.w3.org/1999/xlink")
@@ -185,8 +185,8 @@ for nid in node_ids:
                 logging.error("Could not get node.json for parent node: " + str(p_url))
     tree = ET.ElementTree(root)
     ET.indent(tree, space='\t')
-    if args.outputdir is not None and os.path.exists(args.outputdir):
-        filename = os.path.join(args.outputdir, str(nid) +"_mets.xml")
+    if outputdir is not None and os.path.exists(outputdir):
+        filename = os.path.join(outputdir, str(nid) +"_mets.xml")
     else:
         filename = str(nid) + "_mets.xml"
     tree.write(filename, xml_declaration=False, encoding='utf-8')
