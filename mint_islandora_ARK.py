@@ -34,6 +34,11 @@ if args.get_nodes == 'True':
 else:
     node_ids = aiptools.read_config_nodes(config)
 
+# Write node_ids to new config for use in other scripts
+config['node_ids'] = node_ids
+with open(args.config, 'w') as f:
+    yaml.dump(config, f, default_flow_style=False)
+
 # Get node.json
 for node in nids:
     try:

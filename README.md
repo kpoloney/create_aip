@@ -49,9 +49,10 @@ This script contains functions which are imported by the other scripts for retri
 This script creates METS files for Islandora objects. The script uses Islandora field models taxonomy and `memberOf`
 information to convey parent-child relationships.
 
-The script has two arguments: `--config` points to the configuration YAML file.
-Optionally, an output directory can be specified with `--outputdir` where the XML files will be written to. By default,
-the files will be saved to the same folder as the script.
+The script has two arguments: 
+- `--config` points to the configuration YAML file.
+- `--outputdir` Optional, specify an output directory the XML files will be written to. By default, the files will be 
+  saved to the same folder as the script.
 
 If no NAAN is given in the configuration file, the script will use the Islandora URL for the METS `FLocat` field. 
 
@@ -69,4 +70,7 @@ This script automatically mints ARKs for Islandora objects. Islandora metadata i
 required for the ARK, and the Drupal UUID is used as the ARK identifier. The script uses 
 [Larkm](https://github.com/mjordan/larkm) to mint ARKs. 
 
-The script's argument `--config` points to the configuration YAML file.
+The script has three arguments:
+- `--config` points to the configuration YAML file
+- `--get_nodes` indicates whether the script should automatically get new node IDs from Islandora
+- `--date` If `--get_nodes` is True, indicate the date to search for new nodes. Input date in YYYYMMDD format
