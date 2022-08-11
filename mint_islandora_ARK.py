@@ -6,10 +6,12 @@ import argparse
 import yaml
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', required=True, help='The location of the configuration YAML file.')
+parser.add_argument('-c', '--config', required=True, help='The location of the configuration YAML file.')
+parser.add_argument('-g', '--get_nodes', required=True, choices=['True','False'] , help='Choose whether to get new node IDs automatically or not.')
+parser.add_argument('-d', '--date', required=False, help='If get_nodes is True, input a date in the form YYYYMMDD from which to search for new nodes.')
 args = parser.parse_args()
 
-logging.basicConfig(filename="make_ARK.log", level=logging.INFO)
+logging.basicConfig(filename="create_aip.log", level=logging.INFO)
 
 # Load config
 try:
@@ -21,7 +23,16 @@ except:
 
 larkm_url = config['larkm_host'].rstrip("/")
 repo_url = config['repo_url'].rstrip("/")
-node_ids = aiptools.read_config_nodes(config)
+auth = tuple(config['auth'])
+
+if args.get_nodes == 'True':
+    try:
+        node_ids = aiptools.get_new_nodes(repo_url, args.date, auth)
+    except:
+        logging.error("Could not retrieve node IDs.")
+        raise SystemExit
+else:
+    node_ids = aiptools.read_config_nodes(config)
 
 # Get node.json
 for node in nids:
@@ -31,9 +42,11 @@ for node in nids:
         logging.error("Could not retrieve node.json for " + str(node))
         continue
     uuid = nj['uuid'][0]['value']
+    # Use node.json to fill ERC values
     try:
-        who = nj['metatag']['value']['dcterms_creator_0']
+        who = nj['metatag']['value']['citation_author_0']
     except KeyError:
+        logging.error("Manually enter ERC who for " + str(node))
         who = ":at"
     what = nj['title'][0]['value']
     when = nj['created'][0]['value']

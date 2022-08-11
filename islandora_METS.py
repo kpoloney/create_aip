@@ -8,7 +8,7 @@ import yaml
 from lxml import etree, isoschematron
 import xml.etree.ElementTree as ET
 
-logging.basicConfig(filename="mets.log", level=logging.INFO)
+logging.basicConfig(filename="create_aip.log", level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', required=True, help='The location of the configuration YAML file.')

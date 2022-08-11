@@ -56,29 +56,30 @@ def get_field_model(url):
         logging.error("get_field_model error: invalid URL " + url)
         raise Warning("Invalid URL: " + url)
 
-# def get_new_nodes(repo_url, date, user, pw):
-#     new_node_ids = []
-#     pg_count = 0
-#     params = {"date":date, "page":pg_count}
-#     r = requests.get(repo_url + "/daily_nodes_created", params=params, auth=(user,pw))
-#     if r.status_code != 200:
-#         return "Could not retrieve new nodes. Status code: " + str(r.status_code)
-#     new = r.json()
-#     for i in range(len(new)):
-#         new_node_ids.append(new[i]['nid'][0]['value'])
-#     if len(new)==10:
-#         next=['tmp']
-#         while len(next)>0:
-#             pg_count += 1
-#             params['page'] = pg_count
-#             r = requests.get(repo_url + "/daily_nodes_created", params=params, auth=(user, pw))
-#             next = r.json()
-#         if len(next) == 0:
-#             return new_node_ids
-#         else len(next) == 10:
-#
-#
-#     else:
-#         return new_node_ids
-
-
+def get_new_nodes(repo_url, date, auth):
+    new_node_ids = []
+    pg_count = 0
+    params = {"date":date, "page":pg_count}
+    r = requests.get(repo_url + "/daily_nodes_created", params=params, auth=auth)
+    if r.status_code != 200:
+        logging.error("get_new_nodes unable to retrieve new nodes. Status code: " + str(r.status_code))
+        raise Warning("Unable to retrieve new node IDs. Status code: " + str(r.status_code))
+    new = r.json()
+    for i in range(len(new)):
+        new_node_ids.append(new[i]['nid'][0]['value'])
+    if len(new)==10:
+        nextpg=['tmp']
+        while len(nextpg)>0:
+            pg_count += 1
+            params['page'] = pg_count
+            r = requests.get(repo_url + "/daily_nodes_created", params=params, auth=auth)
+            nextpg = r.json()
+            for j in range(len(nextpg)):
+                new_node_ids.append(nextpg[j]['nid'][0]['value'])
+            if len(nextpg) == 0:
+                return new_node_ids
+    elif len(new)==0:
+        logging.info("get_new_nodes found no new node IDs on " + str(date))
+        raise Warning("No new node IDs on " + str(date))
+    else:
+        return new_node_ids
