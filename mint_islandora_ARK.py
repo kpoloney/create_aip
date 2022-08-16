@@ -28,6 +28,7 @@ auth = tuple(config['auth'])
 if args.get_nodes == 'True':
     try:
         node_ids = aiptools.get_new_nodes(repo_url, args.date, auth)
+        config['node_ids'] = node_ids
     except:
         logging.error("Could not retrieve node IDs.")
         raise SystemExit
@@ -35,12 +36,11 @@ else:
     node_ids = aiptools.read_config_nodes(config)
 
 # Write node_ids to new config for use in other scripts
-config['node_ids'] = node_ids
 with open(args.config, 'w') as f:
     yaml.dump(config, f, default_flow_style=False)
 
 # Get node.json
-for node in nids:
+for node in node_ids:
     try:
         nj = aiptools.get_node_json(repo_url, str(node))
     except:
