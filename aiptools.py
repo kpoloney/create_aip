@@ -94,3 +94,20 @@ def get_ark(larkm_url, repo_url, nid):
         return j['arks'][0]
     else:
         raise Warning("No ARK found for " + nid)
+
+def get_creators(repo_url, node_json):
+    creators = []
+    agents = node_json['field_linked_agent']
+    if len(agents)>0:
+        for i in range(len(agents)):
+            if agents[i]['rel_type'] != 'relators:aut':
+                continue
+            else:
+                p_lookup = repo_url + agents[i]['url'] + '?_format=json'
+                r = requests.get(p_lookup)
+                person = r.json()
+                name = person['name'][0]['value']
+                creators.append(name)
+        return creators
+    else:
+        raise Warning("Could not retrieve creator(s). Enter erc_who manually.")

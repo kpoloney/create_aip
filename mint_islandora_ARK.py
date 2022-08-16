@@ -49,12 +49,12 @@ for node in node_ids:
     uuid = nj['uuid'][0]['value']
     # Use node.json to fill ERC values
     try:
-        who = nj['metatag']['value']['citation_author_0']
-    except KeyError:
+        who = aiptools.get_creators(repo_url, nj)
+    except:
         logging.error("Manually enter ERC who for " + str(node))
         who = ":at"
     what = nj['title'][0]['value']
-    when = nj['created'][0]['value']
+    when = nj['field_edtf_date_created'][0]['value']
     where = repo_url + "/node/" + str(node)
     data = {"identifier":uuid, "who":who, "what":what, "when":when, "where":where}
     p = requests.post(larkm_url, json=data)
@@ -68,3 +68,5 @@ for node in node_ids:
         else:
             logging.error("Could not find or create ARK for " + str(node))
             continue
+    else:
+        continue
