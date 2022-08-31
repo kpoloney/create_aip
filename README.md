@@ -44,6 +44,8 @@ mets_dir: '/metadata/METS'
 
 [make_bag_islandora](#make-islandora-bag) completes and Bags the AIP for Islandora objects.
 
+[mint_local_ARK](#mint-ark-for-local-objects) creates an ARK identifier for objects stored locally.
+
 [local_objects](#local-objects) creates bagged AIPs for objects stored locally that is not intended to be hosted online.
 
 ## aiptools
@@ -81,10 +83,20 @@ The script has two arguments:
 - `--bagger_config` points to the configuration YAML file for Islandora Bagger. If not specified, the script will 
   create one.
 
+## Mint ARK for local objects
+
+This script creates ARKs for objects stored locally. The script takes three arguments:
+- `--larkm` requires the base url of the larkm host.
+- `--objects` is the location of either a single file or folder to be processed or a directory of objects to process.
+- `--single_obj` if minting an ARK for only one object, set this argument to "True" if the `--objects` argument is not 
+  a single file. Otherwise, all items within a single folder will each be given an ARK.
+
 ## Local Objects
 
 This script creates AIPs for objects that are stored locally and will not be hosted online. If the object does not
-have an ARK already indexed in [larkm](https://github.com/mjordan/larkm), then one will be minted.
+have an ARK already indexed in [larkm](https://github.com/mjordan/larkm), then you will have to first run the 
+`mint_local_ARK.py` script.
 
-Users must have [FITS](https://projects.iq.harvard.edu/fits/get-started-using-fits) installed, must have access to
-the drive location on which objects are saved, and have permission to query the larkm API.
+Users must have [FITS](https://projects.iq.harvard.edu/fits/get-started-using-fits) installed if technical metadata will
+be included. Users must have access to the drive location on which objects are saved, and have permission to query the
+larkm API.

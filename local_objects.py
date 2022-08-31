@@ -4,21 +4,23 @@ import subprocess
 import sys
 import bagit
 import requests
+import argparse
+import logging
 
-def get_path(text):
-    while True:
-        p = input(text)
-        if os.path.exists(p):
-            return p
-        else:
-            print("Path does not exist.")
+logging.basicConfig(filename="local_aip.log", level=logging.INFO)
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--objects', required=True, help='The directory of objects to be bagged')
+parser.add_argument('--output_dir', required=True, help='The directory where AIP bags will be saved.')
+parser.add_argument('--larkm', required=True, help="The base URL of larkm.")
+parser.add_argument('--fits', required=False, help="If including FITS metadata, specify the tool's location.")
+args = parser.parse_args()
 
-# Path to where bag dir(s) will be made
-path = get_path("Enter directory to save bags: ")
-
-# Where is fits saved?
-fits_dir = get_path("Enter directory where FITS is saved: ")
+if os.path.exists(args.fits):
+    fits = True
+    fits_dir = args.fits
+else:
+    fits = False
 
 def get_bag_size(bagpath):
     total = 0
@@ -52,9 +54,14 @@ def get_bag_size(bagpath):
 # make a dictionary in the form of: {ark:/path/to/object}
 arks_list = {}
 
-path_to_objects = get_path("Enter directory of objects: ")
-base_url = input("Enter larkm host url: ").rstrip("/")
-ark_lookup = base_url + "/search"
+if os.path.exists(args.objects):
+    path_to_objects = args.objects
+else:
+    logging.error("Object file path does not exist.")
+    raise SystemExit("Object file path does not exist.")
+
+larkm_url = args.larkm.rstrip("/")
+ark_lookup = larkm_url + "/search"
 
 obj_names = os.listdir(path_to_objects)
 curr = os.getcwd()
@@ -97,18 +104,19 @@ for ark,loc in arks_list.items():
         shutil.copyfile(loc, destpath)
     # Get FITS metadata
     os.mkdir(os.path.join(bagname, "data", "metadata"))
-    for root, subdir, files in os.walk(os.path.join(bagname, "data")):
-        for file in files:
-            if file.endswith("_FITS.xml"):
-                continue
-            filepath = os.path.join(root,file)
-            fits_filename = os.path.join(bagname, "data", "metadata", file.split(".")[0] + "_FITS.xml")
-            os.chdir(fits_dir)
-            if sys.platform.startswith("win"):
-                subprocess.run(["fits.bat", "-i", filepath, "-o", fits_filename])
-            else:
-                subprocess.run(["fits.sh", "-i", filepath, "-o", fits_filename])
-            os.chdir(curr_dir)
+    if fits is True:
+        for root, subdir, files in os.walk(os.path.join(bagname, "data")):
+            for file in files:
+                if file.endswith("_FITS.xml"):
+                    continue
+                filepath = os.path.join(root,file)
+                fits_filename = os.path.join(bagname, "data", "metadata", file.split(".")[0] + "_FITS.xml")
+                os.chdir(fits_dir)
+                if sys.platform.startswith("win"):
+                    subprocess.run(["fits.bat", "-i", filepath, "-o", fits_filename])
+                else:
+                    subprocess.run(["fits.sh", "-i", filepath, "-o", fits_filename])
+                os.chdir(curr_dir)
     bag.save(manifests=True)
 
 #--- To-do:
