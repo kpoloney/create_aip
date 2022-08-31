@@ -100,3 +100,9 @@ have an ARK already indexed in [larkm](https://github.com/mjordan/larkm), then y
 Users must have [FITS](https://projects.iq.harvard.edu/fits/get-started-using-fits) installed if technical metadata will
 be included. Users must have access to the drive location on which objects are saved, and have permission to query the
 larkm API.
+
+The script has four arguments:
+- `--objects` is the location of the directory of objects to be processed.
+- `--output_dir` is the directory to which bags will be saved
+- `--larkm` the base url of the larkm host
+- `--fits` optional; the location of the FITS tool if including technical metadata.
