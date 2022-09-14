@@ -89,7 +89,11 @@ This script creates ARKs for objects stored locally. The script takes three argu
 - `--larkm` requires the base url of the larkm host.
 - `--objects` is the location of either a single file or folder to be processed or a directory of objects to process.
 - `--single_obj` if minting an ARK for only one object, set this argument to "True" if the `--objects` argument is not 
-  a single file. Otherwise, all items within a single folder will each be given an ARK.
+  a single file. Otherwise, all items within the directory will each be given an ARK.
+
+Refer to the [Local workflow Document](https://github.com/kpoloney/aip_spec/blob/main/local_workflow.md) to ensure 
+the ERC metadata is included correctly. If the script cannot locate or parse the minimum metadata, the ARK will not 
+be minted.
 
 ## Local Objects
 
