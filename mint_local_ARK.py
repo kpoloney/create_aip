@@ -3,6 +3,7 @@ import requests
 import argparse
 import logging
 import yaml
+from urllib.parse import quote
 
 logging.basicConfig(filename="local_aip.log", level=logging.INFO)
 
@@ -25,7 +26,6 @@ else:
     raise SystemExit(err)
 
 larkm = args.larkm.rstrip("/")
-search_url = larkm + "/search/"
 
 for item in objects:
     where = os.path.join(args.objects, item)
@@ -56,7 +56,7 @@ for item in objects:
                 elif line.startswith("when:"):
                     when = line[5:].strip()
         try:
-            print(who, what, when)
+            test = who + what + when
         except:
             logging.warning(
                 "Could not parse ERC elements in: " + erc_file + ". ARK not minted. Check that all required elements are present.")
@@ -76,7 +76,8 @@ for item in objects:
     p = requests.post(larkm, json=data)
     j = p.json()
     if p.status_code == 409:
-        s = requests.get(search_url, params={'q': 'erc_what:' + what})
+        search_url = larkm + "/search/?q=erc_what:" + '"' + quote(what, safe='') + '"'
+        s = requests.get(search_url)
         search = s.json()
         if search['num_results'] > 0:
             logging.info("ARK already exists: " + search['arks'][0]['ark_string'])

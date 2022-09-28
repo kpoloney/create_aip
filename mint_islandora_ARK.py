@@ -4,6 +4,7 @@ import aiptools
 import logging
 import argparse
 import yaml
+from urllib.parse import quote
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--config', required=True, help='The location of the configuration YAML file.')
@@ -61,7 +62,8 @@ for node in node_ids:
     j = p.json()
     if p.status_code == 409:
         logging.error(j['detail'])
-        s = requests.get(larkm_url + "/search/", params = {'q':'erc_what:'+what})
+        s_url = larkm_url + "/search/?q=erc_what:" + '"' + quote(what, safe='') + '"'
+        s = requests.get(s_url)
         search = s.json()
         if search['num_results'] > 0:
             logging.info("ARK already exists: " + search['arks'][0]['ark_string'])
