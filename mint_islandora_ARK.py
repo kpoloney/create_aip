@@ -62,7 +62,10 @@ for node in node_ids:
     j = p.json()
     if p.status_code == 409:
         logging.error(j['detail'])
-        s_url = larkm_url + "/search/?q=erc_what:" + '"' + quote(what, safe='') + '"'
+        if j['detail'].startswith("'where'"):
+            s_url = larkm_url + "/search/?q=erc_where:" + where
+        else:
+            s_url = larkm_url + "/search/?q=erc_what:" + '"' + quote(what, safe='') + '"'
         s = requests.get(s_url)
         search = s.json()
         if search['num_results'] > 0:
