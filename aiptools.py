@@ -91,7 +91,7 @@ def get_ark(larkm_url, repo_url, nid):
     r = requests.get(search, params=params)
     j = r.json()
     if j['num_results'] > 0:
-        return j['arks'][0]
+        return j['arks'][0]['ark_string']
     else:
         raise Warning("No ARK found for " + str(nid))
 
