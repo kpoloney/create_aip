@@ -16,7 +16,7 @@ parser.add_argument('--larkm', required=True, help="The base URL of larkm.")
 parser.add_argument('--fits', required=False, help="If including FITS metadata, specify the tool's location.")
 args = parser.parse_args()
 
-if os.path.exists(args.fits):
+if args.fits is not None and os.path.exists(args.fits):
     fits = True
     fits_dir = args.fits
 else:
@@ -33,6 +33,9 @@ def get_bag_size(bagpath):
                     total += obj.stat().st_size
                 elif obj.is_dir():
                     total += get_bag_size(obj.path)
+    return total
+
+def bagsize_units(total):
     if total < 1024:
         return str(total) + " bytes"
     elif total < 1024**2:
@@ -51,24 +54,47 @@ def get_bag_size(bagpath):
         pb = total/(1024**5)
         return str(round(pb,2)) + " PB"
 
-# make a dictionary in the form of: {ark:/path/to/object}
-arks_list = {}
-
 if os.path.exists(args.objects):
     path_to_objects = args.objects
 else:
-    logging.error("Object file path does not exist.")
-    raise SystemExit("Object file path does not exist.")
+    logging.error("Path to objects does not exist: " + args.objects)
+    raise SystemExit("Path to objects does not exist.")
+
+if os.path.exists(args.output_dir):
+    if os.path.isdir(args.output_dir):
+        output_dir = args.output_dir
+    else:
+        logging.error("Output directory path is not valid: " + args.output_dir)
+        raise SystemExit("output_dir must be a valid directory folder.")
+else:
+    output_dir = os.path.join(os.getcwd(), args.output_dir)
+    logging.info("Output directory not found. Creating new directory: " + output_dir)
+    try:
+        os.mkdir(output_dir)
+    except:
+        logging.error("Failed to create output directory at: " + output_dir)
+        raise SystemExit("Failed to create output directory at: " + output_dir)
 
 larkm_url = args.larkm.rstrip("/")
 ark_lookup = larkm_url + "/search"
-
 obj_names = os.listdir(path_to_objects)
 curr = os.getcwd()
 os.chdir(path_to_objects)
 
+# make a dictionary in the form of: {ark:/path/to/object}
+arks_list = {}
+md_files = {}
+
 for name in obj_names:
     full = os.path.abspath(name)
+    if name.split(".")[0].lower().endswith("_erc") or name.split(".")[0].lower().endswith("_dmd"):
+        base = name.split("_")[0]
+        if name.split("_")[0] in md_files.keys():
+            new = [md_files[base], full]
+            md_files[base] = new
+        else:
+            md_files[base] = full
+        continue
     params = {"q":r"erc_where:"+full}
     r = requests.get(ark_lookup, params=params)
     j = r.json()
@@ -76,49 +102,72 @@ for name in obj_names:
         ark = j['arks'][0]['ark_string']
         arks_list[ark] = full
     else:
-        print("Couldn't find ARK: " + name)
+        logging.error("Couldn't find ARK for object: " + name)
 
-os.chdir(curr)
-
-count=1
+count=0
 for ark,loc in arks_list.items():
     if not os.path.exists(loc):
-        print("Check file path: ", loc)
+        logging.error("Could not find object at path: ", loc)
         continue
-    count += 1
-    uuid=ark.split("/")[1]
-    bagname = os.path.join(path, uuid)
+    uuid=ark.split("/")[1][2:]
+    bagname = os.path.join(output_dir, "aip-" + uuid)
     os.mkdir(bagname)
-    bagsize = get_bag_size(loc)
     info = {"Source-Organization": "Simon Fraser University",
             "Organization-Address": "8888 University Dr, Burnaby, BC V5A 1S6", "Contact-Email": "libhelp@sfu.ca",
-            "External-Identifier": ark, "Internal-Sender-Identifier": loc, "Bag-Size": bagsize}
+            "External-Identifier": ark, "Internal-Sender-Identifier": loc}
     if len(arks_list) > 1:
-        info['Bag-Count'] = str(count) + " of " + str(len(arks_list))
         info['Bag-Group-Identifier'] = os.path.split(path_to_objects)[1]
     bag = bagit.make_bag(bagname, bag_info=info, checksums=['md5','sha256'])
+    count += 1
     if os.path.isdir(loc):
         shutil.copytree(loc, os.path.join(bagname, "data"), dirs_exist_ok=True)
     elif os.path.isfile(loc):
         destpath = os.path.join(bagname, "data", os.path.basename(loc))
         shutil.copyfile(loc, destpath)
-    # Get FITS metadata
-    os.mkdir(os.path.join(bagname, "data", "metadata"))
+    # Look for metadata files
+    md_dir = os.path.join(bagname, "data", "metadata")
+    base_name = os.path.basename(loc).split(".")[0]
+    if base_name in md_files.keys():
+        if not os.path.exists(md_dir):
+            os.mkdir(md_dir)
+        if isinstance(md_files[base_name], list):
+            for md in md_files[base_name]:
+                shutil.copyfile(md, os.path.join(md_dir, os.path.basename(md)))
+        else:
+            shutil.copyfile(md_files[base_name], os.path.join(md_dir, os.path.basename(md_files[base_name])))
+    for root, subdir, files in os.walk(os.path.join(bagname,"data")):
+        if "metadata" in subdir:
+            subdir.remove("metadata")
+        for file in files:
+            tmp = os.path.splitext(file)[0].lower()
+            if tmp.endswith("_fits") or tmp.endswith("_erc") or tmp.endswith("_dmd"):
+                if not os.path.exists(md_dir):
+                    os.mkdir(md_dir)
+                os.chdir(root)
+                full_loc = os.path.abspath(file)
+                shutil.move(full_loc, os.path.join(md_dir, file))
+
+    # Get FITS metadata if indicated
     if fits is True:
+        if not os.path.exists(md_dir):
+            os.mkdir(md_dir)
         for root, subdir, files in os.walk(os.path.join(bagname, "data")):
+            if "metadata" in subdir:
+                subdir.remove("metadata")
             for file in files:
-                if file.endswith("_FITS.xml"):
+                tmp = os.path.splitext(file)[0].lower()
+                if tmp.endswith("_fits") or tmp.endswith("_erc") or tmp.endswith("_dmd"):
                     continue
                 filepath = os.path.join(root,file)
-                fits_filename = os.path.join(bagname, "data", "metadata", file.split(".")[0] + "_FITS.xml")
+                fits_filename = os.path.join(md_dir, file.split(".")[0] + "_FITS.xml")
                 os.chdir(fits_dir)
                 if sys.platform.startswith("win"):
                     subprocess.run(["fits.bat", "-i", filepath, "-o", fits_filename])
                 else:
                     subprocess.run(["fits.sh", "-i", filepath, "-o", fits_filename])
-                os.chdir(curr_dir)
+    bagsize = bagsize_units(get_bag_size(os.path.join(bagname, "data")))
+    bag.info['Bag-Size'] = bagsize
+    bag.info['Bag-Count'] = str(count) + " of " + str(len(arks_list))
     bag.save(manifests=True)
 
-#--- To-do:
-#  - add descriptive metadata
-#  - allow config for bag-info
+os.chdir(curr)
