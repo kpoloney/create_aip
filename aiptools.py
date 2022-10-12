@@ -86,14 +86,14 @@ def get_new_nodes(repo_url, date, auth):
 
 def get_ark(larkm_url, repo_url, nid):
     search=larkm_url.strip('/') + '/search/'
-    nodeloc = repo_url.strip('/') + '/node/' + str('nid')
+    nodeloc = repo_url.strip('/') + '/node/' + str(nid)
     params = {'q':'erc_where:' + nodeloc}
     r = requests.get(search, params=params)
     j = r.json()
     if j['num_results'] > 0:
         return j['arks'][0]
     else:
-        raise Warning("No ARK found for " + nid)
+        raise Warning("No ARK found for " + str(nid))
 
 def get_creators(repo_url, node_json):
     creators = []
