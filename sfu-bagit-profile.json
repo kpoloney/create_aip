@@ -72,6 +72,13 @@
     "sha256",
     "md5",
     "sha512"
-  ]
+  ],
+  "Source-Repository": {
+    "required":false,
+    "values": ["Summit Research Repository", "Special Collections and Rare Books"]
+  },
+  "Validation-Date": {
+    "required": true
+  }
 
 }

@@ -117,6 +117,12 @@ for ark,loc in arks_list.items():
             "External-Identifier": ark, "Internal-Sender-Identifier": loc}
     if len(arks_list) > 1:
         info['Bag-Group-Identifier'] = os.path.split(path_to_objects)[1]
+    d = requests.get(ark_lookup, params={"q":"ark_string:"+ark})
+    try:
+        desc = d.json()['arks'][0]['erc_what']
+        info['External-Description'] = desc
+    except:
+        logging.info("Could not add External-Description tag for " + ark)
     bag = bagit.make_bag(bagname, bag_info=info, checksums=['md5','sha256'])
     count += 1
     if os.path.isdir(loc):
@@ -169,5 +175,3 @@ for ark,loc in arks_list.items():
     bag.info['Bag-Size'] = bagsize
     bag.info['Bag-Count'] = str(count) + " of " + str(len(arks_list))
     bag.save(manifests=True)
-
-os.chdir(curr)
