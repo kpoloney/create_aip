@@ -108,6 +108,7 @@ def get_creators(repo_url, node_json):
                 person = r.json()
                 name = person['name'][0]['value']
                 creators.append(name)
-        return creators
+        creators_str = " ".join(creators)
+        return creators_str
     else:
         raise Warning("Could not retrieve creator(s). Enter erc_who manually.")
