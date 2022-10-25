@@ -11,6 +11,12 @@
       "required": true,
       "values": "Simon Fraser University"
     },
+    "Contact-Name": {
+      "required": false
+    },
+    "Contact-Phone": {
+      "required": false
+    },
     "Contact-Email": {
       "required": true,
       "values": [
@@ -27,16 +33,27 @@
       "repeatable": false
     },
     "External-Identifier": {
-      "required": true
+      "required": true,
+      "description": "Value is the ARK for the object."
     },
     "External-Description":{
-      "required":false
+      "required": true,
+      "description": "Use either the ERC 'what' value or the Islandora title."
     },
     "Internal-Sender-Identifier": {
-      "required": false
+      "required": true,
+      "description": "Value is either the Islandora URL for the object or the local filepath where it is stored."
     },
     "Internal-Sender-Description": {
       "required": false
+    },
+    "Source-Repository": {
+      "required": true,
+      "values": [
+        "Summit Research Repository",
+        "Special Collections and Rare Books"
+      ],
+      "description": "Indicate the Library repository responsible for the object."
     },
     "Bag-Size": {
       "required": true,
@@ -45,6 +62,10 @@
     "Payload-Oxum": {
       "required": true,
       "repeatable": false
+    },
+    "Validation-Date": {
+      "required": true,
+      "description": "Date in format YYYY-MM-DD on which the bag was validated."
     }
   },
   "Manifests-Required": [
@@ -72,13 +93,6 @@
     "sha256",
     "md5",
     "sha512"
-  ],
-  "Source-Repository": {
-    "required":false,
-    "values": ["Summit Research Repository", "Special Collections and Rare Books"]
-  },
-  "Validation-Date": {
-    "required": true
-  }
+  ]
 
 }
