@@ -83,7 +83,7 @@ for nid in node_ids:
     if len(members)>0: # members will be length 0 if there are no child objects
         child_level = ET.SubElement(main_level, mets+"div", attrib={"TYPE":"http://purl.org/dc/terms/hasPart"})
         # members will come out as a list of dictionaries if there are multiple children. Otherwise it is a dictionary.
-        if isinstance(members, list):
+        if len(members)>1:
             for i in range(len(members)):
                 child_uuid = members[i]['uuid'][0]['value']
                 fptr = ET.SubElement(child_level, mets+"fptr", attrib={"FILEID":"uuid_"+child_uuid})
@@ -128,7 +128,7 @@ for nid in node_ids:
     if len(node['field_member_of'])>0:
         parent_level = ET.SubElement(main_level, mets+"div", attrib={"TYPE":"http://purl.org/dc/terms/isPartOf"})
         # if there are multiple parents:
-        if isinstance(node['field_member_of'], list):
+        if len(node['field_member_of'])>1:
             p_url = []
             for i in range(len(node['field_member_of'])):
                 url = repo_url + node['field_member_of'][i]['url']+'?_format=json'
@@ -159,10 +159,10 @@ for nid in node_ids:
                 else:
                     logging.error("Could not get node.json for parent node: " + str(p_url[j]))
         else:
-            p_url = repo_url + node['field_member_of'] + "?_format=json"
+            p_url = repo_url + node['field_member_of'][0]['url'] + "?_format=json"
             r = requests.get(p_url)
             if r.status_code == 200:
-                parent_node = json.loads(r.content.decode('utf-8'))
+                parent_node = r.json()
                 uuid = parent_node['uuid'][0]['value']
                 fptr = ET.SubElement(parent_level, mets+"fptr", attrib={"FILEID":"uuid_"+uuid})
                 if id_type == 'ARK':

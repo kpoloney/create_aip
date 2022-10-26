@@ -114,7 +114,8 @@ for ark,loc in arks_list.items():
     os.mkdir(bagname)
     info = {"Source-Organization": "Simon Fraser University",
             "Organization-Address": "8888 University Dr, Burnaby, BC V5A 1S6", "Contact-Email": "libhelp@sfu.ca",
-            "External-Identifier": ark, "Internal-Sender-Identifier": loc}
+            "External-Identifier": ark, "Internal-Sender-Identifier": loc, "Validation-Date": "",
+            "Source-Repository": "Special Collections and Rare Books"}
     if len(arks_list) > 1:
         info['Bag-Group-Identifier'] = os.path.split(path_to_objects)[1]
     d = requests.get(ark_lookup, params={"q":"ark_string:"+ark})
