@@ -48,6 +48,8 @@ mets_dir: '/metadata/METS'
 
 [local_objects](#local-objects) creates bagged AIPs for objects stored locally that is not intended to be hosted online.
 
+[validate_aip](#validate-aip) validates a completed AIP against the AIP specification and BagIt specification. 
+
 ## aiptools
 
 This script contains functions which are imported by the other scripts for retrieving Islandora metadata. 
@@ -110,3 +112,13 @@ The script has four arguments:
 - `--output_dir` is the directory to which bags will be saved
 - `--larkm` the base url of the larkm host
 - `--fits` optional; the location of the FITS tool if including technical metadata.
+
+## Validate AIP
+
+This script is to be run to validate a completed AIP. It checks for required ERC metadata and conformity to the 
+BagIt Profile and BagIt specification. 
+
+The script has three arguments:
+- `--bag_dir` is the directory of bags to be validated
+- `--profile_url` is the ARK or URL of the BagIt profile
+- `--larkm_url` is the base URL of larkm. It is only required if the BagIt profile URI is an ARK indexed in larkm.
