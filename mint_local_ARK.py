@@ -5,7 +5,7 @@ import logging
 import yaml
 from urllib.parse import quote
 
-logging.basicConfig(filename="local_aip.log", level=logging.INFO)
+logging.basicConfig(filename="create_aip.log", level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--larkm', required=True, help="The base URL of larkm.")

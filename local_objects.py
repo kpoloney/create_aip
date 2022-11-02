@@ -7,7 +7,7 @@ import requests
 import argparse
 import logging
 
-logging.basicConfig(filename="local_aip.log", level=logging.INFO)
+logging.basicConfig(filename="create_aip.log", level=logging.INFO)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--objects', required=True, help='The directory of objects to be bagged')
