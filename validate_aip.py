@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import re
 from urllib.parse import urlparse
 
 logging.basicConfig(filename="validate.log", level=logging.INFO)
@@ -24,9 +25,15 @@ def test_url(url):
     except:
         return False
 
-url_err_msg="Could not retrieve BagIt profile: " + args.profile_url
+def is_ark(val):
+    ark_regex = re.compile(r"ark:[0-9bcdfghjkmnpqrstvwxz]+/.+$")
+    return ark_regex.match(val)
+
+url_err_msg = "Could not retrieve BagIt profile: " + args.profile_url
 
 if urlparse(args.profile_url).scheme == 'ark':
+    if is_ark(args.profile_url) is None:
+        logging.error("BagIt Profile Identifier is not a valid ARK.")
     try:
         larkm = args.larkm_url.strip("/")
         params = {'q': 'ark_string:' + args.profile_url}
@@ -41,17 +48,28 @@ if urlparse(args.profile_url).scheme == 'ark':
     except:
         logging.error(url_err_msg)
         raise SystemExit(url_err_msg)
+elif test_url(args.profile_url):
+    profile_url = args.profile_url
 else:
-    if test_url(args.profile_url):
-        profile_url = args.profile_url
-    else:
-        logging.error(url_err_msg)
-        raise SystemExit(url_err_msg)
+    logging.error(url_err_msg)
+    raise SystemExit(url_err_msg)
 
 to_validate = os.listdir(bag_dir)
-# Check for required metadata
+# Check for required metadata and validate ARK
 for path_to_bag in to_validate:
     contents = os.listdir(os.path.join(path_to_bag, 'data'))
+    try:
+        with open(os.path.join(path_to_bag, "bag-info.txt"), 'r') as b:
+            for line in b:
+                if line.startswith("External-Identifier: "):
+                    ext_id = line.split(": ")[1].strip()
+                    if urlparse(ext_id).scheme == 'ark':
+                        ark = ext_id
+                        break
+            if is_ark(ark) is None:
+                logging.error("Could not validate ARK for: ", path_to_bag)
+    except:
+        logging.error("Could not validate ARK for: ", path_to_bag)
     erc = False
     if 'metadata' in contents:
         md = os.listdir(os.path.join(path_to_bag, 'data', 'metadata'))
