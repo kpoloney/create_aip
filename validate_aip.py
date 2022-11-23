@@ -26,7 +26,7 @@ def test_url(url):
         return False
 
 def is_ark(val):
-    ark_regex = re.compile(r"ark:[0-9bcdfghjkmnpqrstvwxz]+/.+$")
+    ark_regex = re.compile(r"ark:/?[0-9bcdfghjkmnpqrstvwxz]+/.+$")
     return ark_regex.match(val)
 
 url_err_msg = "Could not retrieve BagIt profile: " + args.profile_url
