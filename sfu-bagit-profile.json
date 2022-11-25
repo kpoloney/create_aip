@@ -42,7 +42,8 @@
     },
     "Internal-Sender-Identifier": {
       "required": true,
-      "description": "Value is either the Islandora URL for the object or the local filepath where it is stored."
+      "repeatable": true,
+      "description": "Value is either the Islandora URL for the object, AtoM slug, and/or the local filepath where it is stored."
     },
     "Internal-Sender-Description": {
       "required": false
@@ -54,6 +55,20 @@
         "Special Collections and Rare Books"
       ],
       "description": "Indicate the Library repository responsible for the object."
+    },
+    "Source-System": {
+      "required": false,
+      "repeatable": true,
+      "values": [
+        "Islandora",
+        "AtoM"
+      ],
+      "description": "If the object is stored in an online digital repository, indicate the software or system used."
+    },
+    "Source-System-Version": {
+      "required": false,
+      "repeatable": true,
+      "description": "If Source-System is included, indicate the software version number."
     },
     "Bag-Size": {
       "required": true,
