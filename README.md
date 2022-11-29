@@ -36,23 +36,81 @@ mets_dir: '/metadata/METS'
 
 # Scripts
 
+Scripts are organized based on which workflow is being followed. For objects that are stored locally (whether with 
+additional metadata on AtoM or not), use scripts in the [Local](/Local) directory. For objects that are stored on 
+Islandora, use the scripts in the [Islandora](/Islandora) directory. The AIP tools functions are used regardless of 
+workflow. The validation script can be used at any time after an AIP bag is created for either workflow.
+
 [aiptools](#aiptools) contains functions required for the other scripts. 
-
-[mint_islandora_ARK](#mint-islandora-ark) creates an ARK identifier for Islandora objects.
-
-[islandora_METS](#create-mets) creates METS files for Islandora objects. 
-
-[make_bag_islandora](#make-islandora-bag) completes and Bags the AIP for Islandora objects.
-
-[mint_local_ARK](#mint-ark-for-local-objects) creates an ARK identifier for objects stored locally.
-
-[local_objects](#local-objects) creates bagged AIPs for objects stored locally that is not intended to be hosted online.
 
 [validate_aip](#validate-aip) validates a completed AIP against the AIP specification and BagIt specification. 
 
 ## aiptools
 
 This script contains functions which are imported by the other scripts for retrieving Islandora metadata. 
+
+## Validate AIP
+
+This script is to be run to validate a completed AIP. It checks for required ERC metadata and conformity to the 
+BagIt Profile and BagIt specification. 
+
+The script has three arguments:
+- `--bag_dir` is the directory of bags to be validated
+- `--profile_url` is the ARK or URL of the BagIt profile
+- `--larkm_url` is the base URL of larkm. It is only required if the BagIt profile URI is an ARK indexed in larkm.
+
+# Local workflow scripts
+
+These scripts should be completed in the following order, as some scripts depend on the output of others.
+
+1. [get_atom_metadata](#get-atom-descriptions) (optional) If there is additional metadata from AtoM to be added, this 
+   script will use the REST API to download the object's description and create an ERC metadata file from it. 
+2. [mint_local_ARK](#mint-ark-for-local-objects) creates an ARK identifier for objects stored locally.
+   1. Objects must have an ARK before the AIP bag is created. 
+3. [local_objects](#local-objects) creates bagged AIPs for objects that are not intended to be hosted online.
+
+## Get AtoM Descriptions
+
+This script uses the AtoM REST API to request description information for the object. The REST API plugin must be 
+enabled in AtoM. A valid AtoM login and object slug are also required. The ERC metadata file to be used in minting 
+the ARK will be created from the AtoM description.
+
+## Mint ARK for local objects
+
+This script creates ARKs for objects stored locally. The script takes three arguments:
+- `--larkm` requires the base url of the larkm host.
+- `--objects` is the location of either a single file or folder to be processed or a directory of objects to process.
+- `--single_obj` if minting an ARK for only one object, set this argument to "True" if the `--objects` argument is not 
+  a single file. Otherwise, all items within the directory will each be given an ARK.
+
+Refer to the [Local workflow Document](https://github.com/kpoloney/aip_spec/blob/main/local_workflow.md) to ensure 
+the ERC metadata is included correctly. If the script cannot locate or parse the minimum metadata, the ARK will not 
+be minted.
+
+## Local Objects
+
+This script creates AIPs for objects that are stored locally and will not be hosted online. If the object does not
+have an ARK already indexed in [larkm](https://github.com/mjordan/larkm), then you will have to first run the 
+`mint_local_ARK.py` script.
+
+Users must have [FITS](https://projects.iq.harvard.edu/fits/get-started-using-fits) installed if technical metadata will
+be included. Users must have access to the drive location on which objects are saved, and have permission to query the
+larkm API.
+
+The script has four arguments:
+- `--objects` is the location of the directory of objects to be processed.
+- `--output_dir` is the directory to which bags will be saved
+- `--larkm` the base url of the larkm host
+- `--fits` optional; the location of the FITS tool if including technical metadata.
+
+# Islandora workflow scripts
+
+These scripts should be completed in the following order, as some may depend on the output of others.
+
+1. [mint_islandora_ARK](#mint-islandora-ark) creates an ARK identifier for Islandora objects.
+   1. An ARK is required for the creation of an AIP bag.
+2. [islandora_METS](#create-mets) (optional) creates METS files for Islandora objects. 
+3. [make_bag_islandora](#make-islandora-bag) completes and Bags the AIP for Islandora objects using Islandora Bagger.
 
 ## Mint Islandora ARK
 
@@ -84,41 +142,3 @@ The script has two arguments:
 - `--config` points to the AIP configuration YAML file
 - `--bagger_config` points to the configuration YAML file for Islandora Bagger. If not specified, the script will 
   create one.
-
-## Mint ARK for local objects
-
-This script creates ARKs for objects stored locally. The script takes three arguments:
-- `--larkm` requires the base url of the larkm host.
-- `--objects` is the location of either a single file or folder to be processed or a directory of objects to process.
-- `--single_obj` if minting an ARK for only one object, set this argument to "True" if the `--objects` argument is not 
-  a single file. Otherwise, all items within the directory will each be given an ARK.
-
-Refer to the [Local workflow Document](https://github.com/kpoloney/aip_spec/blob/main/local_workflow.md) to ensure 
-the ERC metadata is included correctly. If the script cannot locate or parse the minimum metadata, the ARK will not 
-be minted.
-
-## Local Objects
-
-This script creates AIPs for objects that are stored locally and will not be hosted online. If the object does not
-have an ARK already indexed in [larkm](https://github.com/mjordan/larkm), then you will have to first run the 
-`mint_local_ARK.py` script.
-
-Users must have [FITS](https://projects.iq.harvard.edu/fits/get-started-using-fits) installed if technical metadata will
-be included. Users must have access to the drive location on which objects are saved, and have permission to query the
-larkm API.
-
-The script has four arguments:
-- `--objects` is the location of the directory of objects to be processed.
-- `--output_dir` is the directory to which bags will be saved
-- `--larkm` the base url of the larkm host
-- `--fits` optional; the location of the FITS tool if including technical metadata.
-
-## Validate AIP
-
-This script is to be run to validate a completed AIP. It checks for required ERC metadata and conformity to the 
-BagIt Profile and BagIt specification. 
-
-The script has three arguments:
-- `--bag_dir` is the directory of bags to be validated
-- `--profile_url` is the ARK or URL of the BagIt profile
-- `--larkm_url` is the base URL of larkm. It is only required if the BagIt profile URI is an ARK indexed in larkm.
