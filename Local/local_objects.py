@@ -67,7 +67,7 @@ if os.path.exists(args.output_dir):
         logging.error("Output directory path is not valid: " + args.output_dir)
         raise SystemExit("output_dir must be a valid directory folder.")
 else:
-    output_dir = os.path.join(os.getcwd(), args.output_dir)
+    output_dir = args.output_dir
     logging.info("Output directory not found. Creating new directory: " + output_dir)
     try:
         os.mkdir(output_dir)
@@ -95,7 +95,7 @@ for name in obj_names:
         else:
             md_files[base] = full
         continue
-    params = {"q":r"erc_where:"+full}
+    params = {"q":"erc_where:"+repr(full)}
     r = requests.get(ark_lookup, params=params)
     j = r.json()
     if j['num_results'] > 0:

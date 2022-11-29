@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import re
+from datetime import date
 from urllib.parse import urlparse
 
 logging.basicConfig(filename="validate.log", level=logging.INFO)
@@ -97,7 +98,7 @@ for path_to_bag in to_validate:
             if profile.validate(bag):
                 # Add validation date to bag-info tags
                 bag.info['Validation-Date'] = str(date.today())
-                bag.save()
+                bag.save(manifests=True)
             else:
                 logging.error(str(path_to_bag) + " is not valid according to BagIt Profile.")
         else:

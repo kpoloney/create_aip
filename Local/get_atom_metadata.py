@@ -5,13 +5,18 @@ import requests
 
 base_url = input("Enter AtoM base URL: ")
 endpoint = base_url.strip("/") + "/api/informationobjects/"
-
 slug = input("Enter AtoM slug of object: ")
 user = input("Enter AtoM login email: ")
 pw = getpass.getpass()
 
+# This should be the parent folder of the object; not an individual file.
+object_loc = os.path.normpath(input("Enter drive folder where object is stored: "))
+
 r = requests.get(endpoint + slug, auth=(user, pw))
-j = r.json()
+if r.status_code == 200:
+    j = r.json()
+else:
+    raise SystemExit("Unable to access information object at: " + endpoint + slug)
 
 what = j['title']
 # "Authorized" is misspelled in the api response; go back and check later if this gets fixed.
@@ -28,11 +33,12 @@ if start == end:
     when = start
 else:
     when = start+"/"+end
-# erc_where field will be auto-populated for local object ARKs as the drive location.
+where = object_loc
 
 # Write data to file
-with open(slug+"_erc.txt", 'w') as e:
-    e.write("erc:\n" + "who: " + who + "\n" + "what: " + what + "\n" + "when: " + when)
-
-with open(slug + "_atom_dmd.json", 'w') as a:
-    json.dump(j, a)
+erc_path = os.path.join(object_loc, slug + "_erc.txt")
+with open(erc_path, 'w') as e:
+    e.write("erc:\n" + "who: " + who + "\n" + "what: " + what + "\n" + "when: " + when + "\n" + "where: " + where)
+md_path = os.path.join(object_loc, slug + "_atom_dmd.json")
+with open(md_path, 'w') as a:
+    json.dump(j, a, indet = 4)

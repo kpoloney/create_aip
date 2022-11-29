@@ -28,7 +28,7 @@ else:
 larkm = args.larkm.rstrip("/")
 
 for item in objects:
-    if len(objects)==1:
+    if os.path.isfile(args.objects):
         where = args.objects
     else:
         where = os.path.join(args.objects, item)
