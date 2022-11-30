@@ -2,15 +2,37 @@ import os
 import json
 import getpass
 import requests
+import argparse
+from urllib.parse import urlparse
 
-base_url = input("Enter AtoM base URL: ")
-endpoint = base_url.strip("/") + "/api/informationobjects/"
-slug = input("Enter AtoM slug of object: ")
+parser = argparse.ArgumentParser()
+parser.add_argument('--atom_url', required=True, help='The base URL for AtoM.')
+parser.add_argument('--slug', required=True, help="The AtoM slug of the object.")
+parser.add_argument('--obj_dir', required=True, help="Enter parent directory of object.")
+args = parser.parse_args()
+
+def test_url(url):
+    try:
+        test = urlparse(url)
+        return all([test.scheme, test.netloc])
+    except:
+        return False
+
+if test_url(args.atom_url):
+    base_url = args.atom_url.strip("/")
+else:
+    raise SystemExit(args.atom_url + " is not a valid URL.")
+
+endpoint = base_url + "/api/informationobjects/"
+slug = args.slug
+
 user = input("Enter AtoM login email: ")
-pw = getpass.getpass()
+pw = getpass.getpass("Enter AtoM password: ")
 
 # This should be the parent folder of the object; not an individual file.
-object_loc = os.path.normpath(input("Enter drive folder where object is stored: "))
+object_loc = os.path.normpath(args.obj_dir)
+if not os.path.exists(object_loc):
+    raise SystemExit(object_loc + " path does not exist.")
 
 r = requests.get(endpoint + slug, auth=(user, pw))
 if r.status_code == 200:

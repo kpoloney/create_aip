@@ -69,11 +69,18 @@ These scripts should be completed in the following order, as some scripts depend
    1. Objects must have an ARK before the AIP bag is created. 
 3. [local_objects](#local-objects) creates bagged AIPs for objects that are not intended to be hosted online.
 
+See the [Local Workflow Steps](https://github.com/kpoloney/aip_spec/blob/main/local_workflow.md) for more information.
+
 ## Get AtoM Descriptions
 
 This script uses the AtoM REST API to request description information for the object. The REST API plugin must be 
 enabled in AtoM. A valid AtoM login and object slug are also required. The ERC metadata file to be used in minting 
 the ARK will be created from the AtoM description.
+
+The script takes three arguments:
+- `--atom_url` is the base URL for AtoM
+- `--slug` is the [AtoM slug](https://www.accesstomemory.org/en/docs/2.6/user-manual/glossary/glossary/#term-slug) for the object.
+- `--obj_dir` is the path to the parent directory of the object.
 
 ## Mint ARK for local objects
 
