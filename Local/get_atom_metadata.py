@@ -63,4 +63,4 @@ with open(erc_path, 'w') as e:
     e.write("erc:\n" + "who: " + who + "\n" + "what: " + what + "\n" + "when: " + when + "\n" + "where: " + where)
 md_path = os.path.join(object_loc, slug + "_atom_dmd.json")
 with open(md_path, 'w') as a:
-    json.dump(j, a, indet = 4)
+    json.dump(j, a, indent = 4)
