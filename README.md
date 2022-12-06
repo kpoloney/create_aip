@@ -67,8 +67,8 @@ This script is for adding files to an AIP after it has already been Bagged. If f
 Bag, use this script to include them in the `data` directory and update the Bag's manifests.
 
 The script has two arguments:
--`--files_to_add` is a filepath or comma-separated list of multiple files to be added to the bag.
--`--bag_loc` is the filepath to the bag.
+- `--files_to_add` is a filepath or comma-separated list of multiple files to be added to the bag.
+- `--bag_loc` is the filepath to the bag.
 
 # Local workflow scripts
 
