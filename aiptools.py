@@ -112,3 +112,35 @@ def get_creators(repo_url, node_json):
         return creators_str
     else:
         raise Warning("Could not retrieve creator(s). Enter erc_who manually.")
+
+def get_bag_size(bagpath):
+    total = 0
+    if os.path.isfile(bagpath):
+        total += os.path.getsize(bagpath)
+    else:
+        with os.scandir(bagpath) as it:
+            for obj in it:
+                if obj.is_file():
+                    total += obj.stat().st_size
+                elif obj.is_dir():
+                    total += get_bag_size(obj.path)
+    return total
+
+def bagsize_units(total):
+    if total < 1024:
+        return str(total) + " bytes"
+    elif total < 1024**2:
+        kb=total/1024
+        return str(round(kb,2)) + " KB"
+    elif total < 1024**3:
+        mb = total/(1024**2)
+        return str(round(mb, 2)) + " MB"
+    elif total < 1024**4:
+        gb = total/(1024**3)
+        return str(round(gb, 2)) + " GB"
+    elif total < 1024**5:
+        tb = total/(1024**4)
+        return str(round(tb,2)) + " TB"
+    else:
+        pb = total/(1024**5)
+        return str(round(pb,2)) + " PB"

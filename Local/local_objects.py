@@ -6,6 +6,7 @@ import bagit
 import requests
 import argparse
 import logging
+import aiptools
 
 logging.basicConfig(filename="create_aip.log", level=logging.INFO)
 
@@ -21,38 +22,6 @@ if args.fits is not None and os.path.exists(args.fits):
     fits_dir = args.fits
 else:
     fits = False
-
-def get_bag_size(bagpath):
-    total = 0
-    if os.path.isfile(bagpath):
-        total += os.path.getsize(bagpath)
-    else:
-        with os.scandir(bagpath) as it:
-            for obj in it:
-                if obj.is_file():
-                    total += obj.stat().st_size
-                elif obj.is_dir():
-                    total += get_bag_size(obj.path)
-    return total
-
-def bagsize_units(total):
-    if total < 1024:
-        return str(total) + " bytes"
-    elif total < 1024**2:
-        kb=total/1024
-        return str(round(kb,2)) + " KB"
-    elif total < 1024**3:
-        mb = total/(1024**2)
-        return str(round(mb, 2)) + " MB"
-    elif total < 1024**4:
-        gb = total/(1024**3)
-        return str(round(gb, 2)) + " GB"
-    elif total < 1024**5:
-        tb = total/(1024**4)
-        return str(round(tb,2)) + " TB"
-    else:
-        pb = total/(1024**5)
-        return str(round(pb,2)) + " PB"
 
 if os.path.exists(args.objects):
     path_to_objects = args.objects
@@ -172,7 +141,7 @@ for ark,loc in arks_list.items():
                     subprocess.run(["fits.bat", "-i", filepath, "-o", fits_filename])
                 else:
                     subprocess.run(["fits.sh", "-i", filepath, "-o", fits_filename])
-    bagsize = bagsize_units(get_bag_size(os.path.join(bagname, "data")))
+    bagsize = aiptools.bagsize_units(aiptools.get_bag_size(os.path.join(bagname, "data")))
     bag.info['Bag-Size'] = bagsize
     bag.info['Bag-Count'] = str(count) + " of " + str(len(arks_list))
     bag.save(manifests=True)
