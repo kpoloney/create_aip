@@ -45,6 +45,8 @@ workflow. The validation script can be used at any time after an AIP bag is crea
 
 [validate_aip](#validate-aip) validates a completed AIP against the AIP specification and BagIt specification. 
 
+[add_files](#add-files) adds any additional files to a Bag and updates the manifests and bag-info file.
+
 ## aiptools
 
 This script contains functions which are imported by the other scripts for retrieving Islandora metadata. 
@@ -58,6 +60,15 @@ The script has three arguments:
 - `--bag_dir` is the directory of bags to be validated
 - `--profile_url` is the ARK or URL of the BagIt profile
 - `--larkm_url` is the base URL of larkm. It is only required if the BagIt profile URI is an ARK indexed in larkm.
+
+## Add files
+
+This script is for adding files to an AIP after it has already been Bagged. If files need to be added later to a 
+Bag, use this script to include them in the `data` directory and update the Bag's manifests.
+
+The script has two arguments:
+-`--files_to_add` is a filepath or comma-separated list of multiple files to be added to the bag.
+-`--bag_loc` is the filepath to the bag.
 
 # Local workflow scripts
 
