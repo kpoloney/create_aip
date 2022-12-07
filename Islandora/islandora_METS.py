@@ -2,6 +2,8 @@ import logging
 import requests
 import argparse
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.getcwd()))
 import aiptools
 import yaml
 from lxml import etree, isoschematron

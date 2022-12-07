@@ -1,5 +1,7 @@
 import requests
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.getcwd()))
 import aiptools
 import logging
 import argparse

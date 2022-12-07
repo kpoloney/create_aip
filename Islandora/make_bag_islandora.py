@@ -3,6 +3,7 @@ import sys
 import argparse
 import logging
 import yaml
+sys.path.append(os.path.dirname(os.path.getcwd()))
 import aiptools
 
 logging.basicConfig(filename="create_aip.log", level=logging.INFO)

@@ -6,6 +6,7 @@ import bagit
 import requests
 import argparse
 import logging
+sys.path.append(os.path.dirname(os.path.getcwd()))
 import aiptools
 
 logging.basicConfig(filename="create_aip.log", level=logging.INFO)
