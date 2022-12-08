@@ -19,9 +19,9 @@ if len(args.files_to_add.split(','))>1:
         files.append(item.strip())
 else:
     files.append(args.files_to_add)
-bag = bagit.Bag(bag_loc)
 for file in files:
     shutil.copy(file, os.path.join(bag_loc, "data"))
-bagsize = aiptools.bagsize_units(int(float(bag.info['Payload-Oxum'])))
+bag = bagit.Bag(bag_loc)
+bagsize = aiptools.bagsize_units(aiptools.get_bag_size(os.path.join(bag_loc, "data")))
 bag.info['Bag-Size'] = bagsize
 bag.save(manifests=True)
