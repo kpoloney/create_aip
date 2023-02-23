@@ -1,10 +1,10 @@
 {
   "BagIt-Profile-Info": {
-    "BagIt-Profile-Identifier":"ark:/to/profile",
-    "Source-Organization":"Simon Fraser University",
-    "External-Description":"BagIt Profile for AIPs created for SFU Library digital repositories.",
-    "Version":"0.9",
-    "BagIt-Profile-Version":"1.3.0"
+    "BagIt-Profile-Identifier": "ark:/to/profile",
+    "Source-Organization": "Simon Fraser University",
+    "External-Description": "BagIt Profile for AIPs created for SFU Library digital repositories.",
+    "Version": "0.9",
+    "BagIt-Profile-Version": "1.3.0"
   },
   "Bag-Info": {
     "Source-Organization": {
@@ -36,7 +36,7 @@
       "required": true,
       "description": "Value is the ARK for the object."
     },
-    "External-Description":{
+    "External-Description": {
       "required": true,
       "description": "Use either the ERC 'what' value or the Islandora title."
     },
@@ -78,8 +78,20 @@
       "required": true,
       "repeatable": false
     },
+    "Virus-Scan-Date": {
+      "required": false,
+      "description": "Date in YYYY-MM-DD format on which the bag payload was scanned for viruses"
+    },
+    "Virus-Scan-Software": {
+      "required": false,
+      "description": "Name of software used for virus scan (e.g. ClamAV)"
+    },
+    "Virus-Scan-Software-Version": {
+      "required": false,
+      "description": "Version number of software used for virus scan"
+    },
     "Validation-Date": {
-      "required": true,
+      "required": false,
       "description": "Date in format YYYY-MM-DD on which the bag was validated."
     }
   },
@@ -109,5 +121,4 @@
     "md5",
     "sha512"
   ]
-
 }
