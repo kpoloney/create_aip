@@ -2,6 +2,8 @@ import argparse
 import logging
 import os
 import re
+import bagit
+import bagit_profile
 from datetime import date
 from urllib.parse import urlparse
 
@@ -10,14 +12,27 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--bag_dir", required=True, help="Enter the directory to bags to be validated.")
 parser.add_argument("--profile_url", required=True, help="Enter the URL to the BagIt profile.")
 parser.add_argument("--larkm_url", required=False, help="Include if the profile URI is an ARK indexed in larkm.")
+parser.add_argument("--clamav", required=False, help="If using ClamAV for virus scan, enter directory of ClamAV.")
 args = parser.parse_args()
 
 if os.path.exists(args.bag_dir):
     bag_dir = args.bag_dir
-    os.chdir(bag_dir)
 else:
     logging.error(args.bag_dir + " does not exist.")
     raise SystemExit(args.bag_dir + " does not exist.")
+
+# Check for ClamAV
+if args.clamav is not None and os.path.exists(args.clamav):
+    virus_check = True
+    os.chdir(args.clamav)
+    # Update virus database
+    try:
+        os.system('freshclam')
+    except:
+        logging.error("Could not update virus database.")
+else:
+    virus_check = False
+    logging.info("ClamAV either not specified or unable to locate. Virus scan not completed.")
 
 def test_url(url):
     try:
@@ -27,13 +42,16 @@ def test_url(url):
         return False
 
 def is_ark(val):
-    ark_regex = re.compile(r"ark:/?[0-9bcdfghjkmnpqrstvwxz]+/.+$")
-    return ark_regex.match(val)
+    ark_regex = re.compile("ark:[/]?[0-9bcdfghjkmnpqrstvwxz]+/.+$")
+    if ark_regex.match(val) is None:
+        return False
+    else:
+        return True
 
 url_err_msg = "Could not retrieve BagIt profile: " + args.profile_url
 
 if urlparse(args.profile_url).scheme == 'ark':
-    if is_ark(args.profile_url) is None:
+    if not is_ark(args.profile_url):
         logging.error("BagIt Profile Identifier is not a valid ARK.")
     try:
         larkm = args.larkm_url.strip("/")
@@ -58,22 +76,22 @@ else:
 to_validate = os.listdir(bag_dir)
 # Check for required metadata and validate ARK
 for path_to_bag in to_validate:
-    contents = os.listdir(os.path.join(path_to_bag, 'data'))
+    contents = os.listdir(os.path.join(bag_dir, path_to_bag, 'data'))
     try:
-        with open(os.path.join(path_to_bag, "bag-info.txt"), 'r') as b:
+        with open(os.path.join(bag_dir, path_to_bag, "bag-info.txt"), 'r') as b:
             for line in b:
                 if line.startswith("External-Identifier: "):
                     ext_id = line.split(": ")[1].strip()
                     if urlparse(ext_id).scheme == 'ark':
                         ark = ext_id
                         break
-            if is_ark(ark) is None:
+            if not is_ark(ark):
                 logging.error("Could not validate ARK for: ", path_to_bag)
     except:
         logging.error("Could not validate ARK for: ", path_to_bag)
     erc = False
     if 'metadata' in contents:
-        md = os.listdir(os.path.join(path_to_bag, 'data', 'metadata'))
+        md = os.listdir(os.path.join(bag_dir, path_to_bag, 'data', 'metadata'))
         for file in md:
             name = os.path.splitext(file)[0].lower()
             if name.endswith("_erc"):
@@ -92,6 +110,7 @@ for path_to_bag in to_validate:
 # Validate the AIP against BagIt specification and BagIt profile
 profile = bagit_profile.Profile(profile_url)
 for path_to_bag in to_validate:
+    os.chdir(bag_dir)
     bag = bagit.Bag(path_to_bag)
     if bag.is_valid():
         if profile.validate_serialization(path_to_bag):
@@ -105,3 +124,20 @@ for path_to_bag in to_validate:
             logging.error(str(path_to_bag) + " is not valid: serialization does not validate.")
     else:
         logging.error(str(path_to_bag) + " is invalid according to BagIt specification.")
+    # Virus scan
+    if virus_check is True:
+        os.chdir(args.clamav)
+        logpath = os.path.join(bag_dir, path_to_bag, "data", "metadata", "clamav_scan.txt ")
+        cmd = "clamscan -ri --log=" + logpath + " " + os.path.join(bag_dir, path_to_bag)
+        os.system(cmd)
+        bag.info["Virus-Scan-Date"] = str(date.today())
+        bag.info["Virus-Scan-Software"] = "ClamAV"
+        with open(logpath, 'r') as s:
+            for line in s:
+                if line.startswith("Infected"):
+                    inf = int(line.split(": ")[1])
+                    if inf > 0:
+                        logging.error("Infected file(s) found in bag: " + path_to_bag + ". See clamav_scan.txt for more information.")
+                if line.startswith("Engine version"):
+                    bag.info['Virus-Scan-Software-Version'] = line.split(": ")[1]
+        bag.save(manifests=True)
