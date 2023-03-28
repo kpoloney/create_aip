@@ -56,10 +56,12 @@ This script contains functions which are imported by the other scripts for retri
 This script is to be run to validate a completed AIP. It checks for required ERC metadata and conformity to the 
 BagIt Profile and BagIt specification. 
 
-The script has three arguments:
+The script has four arguments:
 - `--bag_dir` is the directory of bags to be validated
 - `--profile_url` is the ARK or URL of the BagIt profile
-- `--larkm_url` is the base URL of larkm. It is only required if the BagIt profile URI is an ARK indexed in larkm.
+- `--larkm_url` (optional) the base URL of larkm. It is only required if the BagIt profile URI is an ARK indexed in 
+  larkm.
+- `--clamav` (optional) the file location of the virus scan software ClamAV. 
 
 ## Add files
 
