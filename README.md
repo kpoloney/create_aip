@@ -148,7 +148,7 @@ The script has three arguments:
 This script creates METS files for Islandora objects. The script uses Islandora field models taxonomy and `memberOf`
 information to convey parent-child relationships.
 
-The script has two arguments: 
+The script has one argument: 
 - `--config` points to the configuration YAML file.
 
 If no NAAN is given in the configuration file, the script will use the Islandora URL for the METS `FLocat` field.
